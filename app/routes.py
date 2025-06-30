@@ -28,9 +28,8 @@ import joblib
 import pandas as pd
 import numpy as np
 import shap
-from app.feature_engineer import FeatureEngineer
-
-
+from app.feature_engineering import FeatureEngineer
+from sklearn.calibration import CalibratedClassifierCV
 # Define the FraudPredictor class (must match how you saved the model)
 class FraudPredictor:
     def __init__(self, model_path):
@@ -38,10 +37,15 @@ class FraudPredictor:
         self.xgb_model = self.model_data["xgb_model"]
         self.iso_model = self.model_data["iso_model"]
         self.pipeline = self.model_data["pipeline"]
-        # self.iso_thresh = 0.017 # or another value you want to try
         self.iso_thresh = self.model_data["iso_thresh"]
         self.feature_names = self.model_data["feature_names"]
-        self.xgb_explainer = shap.TreeExplainer(self.xgb_model)
+        if hasattr(self.xgb_model, "base_estimator_"):
+            shap_model = self.xgb_model.base_estimator_
+        elif hasattr(self.xgb_model, "estimator"):
+            shap_model = self.xgb_model.estimator
+        else:
+            shap_model = self.xgb_model
+        self.xgb_explainer = shap.TreeExplainer(shap_model)
 
     def predict(self, transaction_data):
         processed = self.pipeline.transform(pd.DataFrame([transaction_data]))
@@ -51,8 +55,8 @@ class FraudPredictor:
         # Decision logic
         if xgb_prob > 0.9:
             decision = "FRAUD"
-        # elif xgb_prob > 0.5 and iso_score < self.iso_thresh:
-        elif xgb_prob > 0.6 and iso_score < 0.017:
+        elif xgb_prob > 0.5 and iso_score < self.iso_thresh:
+        # elif xgb_prob > 0.6 and iso_score < 0.02:
             decision = "NEED TO TAKE FEEDBACK"
         else:
             decision = "GENUINE"
@@ -97,7 +101,7 @@ class FraudPredictor:
         }
 
 
-fraud_predictor = FraudPredictor("models/hybrid_model.pkl")
+fraud_predictor = FraudPredictor("models/hybrid_model_new.pkl")
 
 main_bp = Blueprint("main_bp", __name__)
 

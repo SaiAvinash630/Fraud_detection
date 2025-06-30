@@ -3,7 +3,8 @@ import joblib
 import pandas as pd
 import numpy as np
 import shap
-from feature_engineer import FeatureEngineer
+from feature_engineering import FeatureEngineer
+from sklearn.calibration import CalibratedClassifierCV
 
 # Copy your FraudPredictor class definition here (from routes.py)
 class FraudPredictor:
@@ -14,7 +15,13 @@ class FraudPredictor:
         self.pipeline = self.model_data["pipeline"]
         self.iso_thresh = self.model_data["iso_thresh"]
         self.feature_names = self.model_data["feature_names"]
-        self.xgb_explainer = shap.TreeExplainer(self.xgb_model)
+        if hasattr(self.xgb_model, "base_estimator_"):
+            shap_model = self.xgb_model.base_estimator_
+        elif hasattr(self.xgb_model, "estimator"):
+            shap_model = self.xgb_model.estimator
+        else:
+            shap_model = self.xgb_model
+        self.xgb_explainer = shap.TreeExplainer(shap_model)
         # self.iso_thresh = 0.017
     def predict(self, transaction_data):
         processed = self.pipeline.transform(pd.DataFrame([transaction_data]))
@@ -22,10 +29,11 @@ class FraudPredictor:
         iso_score = self.iso_model.decision_function(processed)[0]
         print("iso_score:", iso_score)
         # Decision logic
-        if xgb_prob > 0.9:
+        if xgb_prob > 0.95:
+        # if xgb_prob > 0.9 and iso_score < 0.017:
             decision = "FRAUD"
-        elif xgb_prob > 0.6 and iso_score < self.iso_thresh:
-        # elif xgb_prob > 0.6 and iso_score < 0.017:
+        # elif xgb_prob > 0.6 and iso_score < self.iso_thresh:
+        elif xgb_prob > 0.6 and iso_score < 0.02:
             decision = "NEED TO TAKE FEEDBACK"
         else:
             decision = "GENUINE"
@@ -70,19 +78,19 @@ class FraudPredictor:
         }
 
 # Instantiate the predictor
-predictor = FraudPredictor("models/hybrid_model.pkl")
+predictor = FraudPredictor("models/hybrid_model_new.pkl")
 
 # Example transaction (fill with realistic test values)
 sample_transaction = {
-    'account_age_days': 30,
+    'account_age_days': 1,
     'payment_method': 'Credit Card',
     'device': 'Laptop',
     'category': 'Electronics',
-    'amount': 40000.0,
+    'amount': 10000.0,
     'quantity': 1,
-    'total_value': 40000.0,
+    'total_value': 10000.0,
     'num_trans_24h': 1,
-    'num_failed_24h': 4,
+    'num_failed_24h': 0,
     'no_of_cards_from_ip': 1,
     'User_id': 123,
     'TimeStamp': '2024-06-24 14:00:00'

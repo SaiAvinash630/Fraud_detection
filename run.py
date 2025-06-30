@@ -7,7 +7,7 @@ and runs the development server.
 """
 
 from app import create_app, db  # Import the app factory
-from app.feature_engineer import FeatureEngineer  # Import the feature engineer module
+from app.feature_engineering import FeatureEngineer  # Import the feature engineer module
 
 # Create the Flask application instance
 app = create_app()
