@@ -1,0 +1,62 @@
+{% extends "base.html" %} {% block title %}Edit Product - ShopNow{% endblock %}
+{% block content %}
+<h2 class="mb-4">Edit Product</h2>
+
+<div class="card shadow-sm mx-auto" style="max-width: 600px">
+  <div class="card-body">
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="row g-3">
+        <!-- Name -->
+        <div class="col-md-6">
+          {{ form.name.label(class="form-label") }} {{
+          form.name(class="form-control") }} {% for error in form.name.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Price -->
+        <div class="col-md-6">
+          {{ form.price.label(class="form-label") }} {{
+          form.price(class="form-control") }} {% for error in form.price.errors
+          %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Description -->
+        <div class="col-md-12">
+          {{ form.description.label(class="form-label") }} {{
+          form.description(class="form-control", rows=3) }} {% for error in
+          form.description.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Image URL -->
+        <div class="col-md-6">
+          {{ form.image_url.label(class="form-label") }} {{
+          form.image_url(class="form-control") }} {% for error in
+          form.image_url.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Category -->
+        <div class="col-md-6">
+          {{ form.category.label(class="form-label") }} {{
+          form.category(class="form-control") }} {% for error in
+          form.category.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="mt-4 text-end">
+        {{ form.submit(class="btn btn-primary px-4") }}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

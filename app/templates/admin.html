@@ -1,0 +1,119 @@
+{% extends "base.html" %} {% block title %}Admin Panel - ShopNow{% endblock %}
+{% block content %}
+<!-- Admin Panel Page -->
+<h2 class="mb-4">Admin Panel</h2>
+
+<!-- Add New Product Form -->
+<div class="card shadow-sm mb-5">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Add New Product</h5>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="row g-3">
+        <div class="col-md-6">
+          {{ form.name.label(class="form-label") }} {{
+          form.name(class="form-control", placeholder="e.g. Essentials Hoodie")
+          }} {% for error in form.name.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-6">
+          {{ form.price.label(class="form-label") }} {{
+          form.price(class="form-control", placeholder="e.g. 49.99") }} {% for
+          error in form.price.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-12">
+          {{ form.description.label(class="form-label") }} {{
+          form.description(class="form-control", rows=3) }} {% for error in
+          form.description.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-6">
+          {{ form.image_url.label(class="form-label") }} {{
+          form.image_url(class="form-control") }} {% for error in
+          form.image_url.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-3">
+          {{ form.category.label(class="form-label") }} {{
+          form.category(class="form-control") }} {% for error in
+          form.category.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-3">
+          {{ form.stock.label(class="form-label") }} {{
+          form.stock(class="form-control") }} {% for error in form.stock.errors
+          %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="mt-4 text-end">
+        {{ form.submit(class="btn btn-primary px-4") }}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Product List Table -->
+<h5 class="mb-3">Existing Products</h5>
+{% if products %}
+<div class="table-responsive">
+  <table
+    class="table table-bordered table-hover align-middle bg-white shadow-sm"
+  >
+    <thead class="table-light">
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Category</th>
+        <th style="width: 140px">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>{{ product.name }}</td>
+        <td>₹{{ "%.2f"|format(product.price) }}</td>
+        <td>{{ product.category or '—' }}</td>
+        <td>
+          <div class="d-flex gap-2">
+            <a
+              href="{{ url_for('main_bp.edit_product', product_id=product.id) }}"
+              class="btn btn-sm btn-outline-secondary"
+              aria-label="Edit product"
+            >
+              Edit
+            </a>
+            <form
+              action="{{ url_for('main_bp.delete_product', product_id=product.id) }}"
+              method="POST"
+              style="display: inline"
+            >
+              {{ form.hidden_tag() }}
+              <button
+                type="submit"
+                class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('Are you sure you want to delete this product?');"
+                aria-label="Delete product"
+              >
+                Delete
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-warning mt-3">
+  No products found. Start by adding a new one above.
+</div>
+{% endif %} {% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %} {% block title %}Payment - ShopNow{% endblock %} {%
+block content %}
+<div class="mx-auto" style="max-width: 420px">
+  {% with messages = get_flashed_messages() %} {% if messages %}
+  <div class="alert alert-info" role="alert">
+    {% for message in messages %}{{ message }}{% endfor %}
+  </div>
+  {% endif %} {% endwith %} {% if payment_success is defined %} {% if
+  payment_success %}
+  <div class="alert alert-success" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    Payment successful! Thank you for your purchase.<br />
+    <strong>Payment Method:</strong> {{ payment_method }}<br />
+    <strong>Total Amount:</strong> ₹{{ "%.2f"|format(total_amount) }}
+  </div>
+  {% else %}
+  <div class="alert alert-danger" role="alert">
+    <i class="bi bi-x-circle-fill me-2"></i>
+    Payment not successful.<br />
+    <strong>Model Decision:</strong> {{ prediction['decision'] }}<br />
+    <strong>Probability:</strong> {{ prediction['probability'] }}<br />
+    <strong>Anomaly Score:</strong> {{ prediction['anomaly_score'] }}<br />
+    <strong>Top Fraud Indicators:</strong>
+    <ul>
+      {% for ind in prediction['fraud_indicators'] %}
+      <li>{{ ind['feature'] }}: {{ ind['impact_percent'] }}%</li>
+      {% endfor %}
+    </ul>
+    {% if prediction['decision'] == 'FRAUD' %}
+    <span class="text-danger fw-semibold">
+      Transaction flagged as potentially fraudulent. Please contact support.
+    </span>
+    {% elif prediction['decision'] == 'NEED TO TAKE FEEDBACK' %}
+    <span class="text-warning fw-semibold">
+      Transaction needs manual feedback/review.
+    </span>
+    {% endif %}
+  </div>
+  {% endif %} {% else %}
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Select Payment Method</h5>
+      <form method="POST">
+        <div class="mb-3">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="payment_method"
+              id="creditCard"
+              value="Credit Card"
+              required
+            />
+            <label class="form-check-label" for="creditCard">
+              Credit Card
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="payment_method"
+              id="debitCard"
+              value="Debit Card"
+            />
+            <label class="form-check-label" for="debitCard"> Debit Card </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="payment_method"
+              id="wallet"
+              value="Wallet"
+            />
+            <label class="form-check-label" for="wallet"> Wallet </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="payment_method"
+              id="netBanking"
+              value="Net Banking"
+            />
+            <label class="form-check-label" for="netBanking">
+              Net Banking
+            </label>
+          </div>
+        </div>
+        <div class="text-end">
+          <button type="submit" class="btn btn-primary px-4" id="checkout-btn">
+            Proceed to Pay
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<script>
+  function handleCheckoutSubmit(form) {
+    var btn = document.getElementById("checkout-btn");
+    btn.disabled = true;
+    btn.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+    return true; // This is crucial!
+  }
+
+  setTimeout(function () {
+    $(".alert").alert("close");
+  }, 3000);
+</script>
+{% endblock %}

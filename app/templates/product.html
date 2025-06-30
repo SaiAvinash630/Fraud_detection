@@ -1,0 +1,103 @@
+{% extends "base.html" %} {% block title %}{{ product.name }} - ShopNow{%
+endblock %} {% block content %}
+<div class="row mb-5">
+  <!-- Product Image -->
+  <div class="col-md-6 mb-4 mb-md-0">
+    {% if product.image_url %}
+    <img
+      src="{{ product.image_url }}"
+      alt="{{ product.name }}"
+      class="img-fluid rounded shadow-sm w-100"
+      style="max-height: 400px; object-fit: contain"
+      loading="lazy"
+    />
+    {% else %}
+    <div
+      class="bg-light d-flex align-items-center justify-content-center rounded shadow-sm"
+      style="height: 300px"
+    >
+      <span class="text-muted">No Image Available</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Product Details -->
+  <div class="col-md-6">
+    <h2 class="fw-bold">{{ product.name }}</h2>
+    <p class="text-success fs-4 mb-1">₹{{ "%.2f"|format(product.price) }}</p>
+    {% if product.category %}
+    <p class="mb-1"><strong>Category:</strong> {{ product.category }}</p>
+    {% endif %}
+    <p class="mb-1"><strong>Stock:</strong> {{ product.stock }}</p>
+    <p class="mb-3">{{ product.description }}</p>
+
+    {% if current_user.is_authenticated %}
+    <a
+      href="{{ url_for('main_bp.add_to_cart', product_id=product.id) }}"
+      class="btn btn-dark me-2 mb-2"
+    >
+      <i class="bi bi-cart-plus"></i> Add to Cart
+    </a>
+    <a
+      href="{{ url_for('main_bp.add_to_wishlist', product_id=product.id) }}"
+      class="btn btn-outline-secondary mb-2"
+    >
+      <i class="bi bi-heart"></i> Add to Wishlist
+    </a>
+    {% else %}
+    <p class="text-muted">
+      Please <a href="{{ url_for('main_bp.login') }}">log in</a> to purchase or
+      save products.
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<hr />
+
+<!-- Reviews Section -->
+<h4 class="mt-5 mb-3">Customer Reviews</h4>
+{% if product.reviews %} {% for review in product.reviews %}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title mb-1">{{ review.user.email }}</h6>
+    <p class="mb-1">{{ review.comment }}</p>
+    <small class="text-muted"
+      >Rating: {{ review.rating }}/5 — {{ review.timestamp.strftime('%b %d, %Y')
+      }}</small
+    >
+  </div>
+</div>
+{% endfor %} {% else %}
+<p class="text-muted">No reviews yet.</p>
+{% endif %}
+
+<!-- Leave a Review -->
+{% if current_user.is_authenticated %}
+<hr />
+<h5 class="mt-4">Leave a Review</h5>
+<form method="POST" novalidate aria-label="Review form">
+  {{ review_form.hidden_tag() }}
+
+  <!-- Rating Field -->
+  <div class="mb-3">
+    {{ review_form.rating.label(class="form-label") }} {{
+    review_form.rating(class="form-select") }} {% for error in
+    review_form.rating.errors %}
+    <div class="text-danger small mt-1">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <!-- Comment Field -->
+  <div class="mb-3">
+    {{ review_form.content.label(class="form-label") }} {{
+    review_form.content(class="form-control", rows="3") }} {% for error in
+    review_form.content.errors %}
+    <div class="text-danger small mt-1">{{ error }}</div>
+    {% endfor %}
+  </div>
+
+  <!-- Submit -->
+  <div class="mb-3">{{ review_form.submit(class="btn btn-primary") }}</div>
+</form>
+{% endif %} {% endblock %}

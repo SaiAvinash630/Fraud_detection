@@ -1,0 +1,113 @@
+{% extends "base.html" %} {% block title %}ShopNow - Home{% endblock %} {% block
+content %} {% if not selected_category %}
+<div class="container" style="margin-top: 80px; max-width: 900px">
+  <h2 class="mb-4" style="text-align: left">Select a Category</h2>
+  <div class="row mb-3">
+    {% for category in categories[0:3] %}
+    <div class="col-12 col-md-4 mb-4">
+      <a
+        href="{{ url_for('main_bp.index', category=category) }}"
+        class="btn btn-outline-primary w-100 py-4 fs-3 shadow-sm text-center"
+        style="border-radius: 1.5rem; font-weight: 600; letter-spacing: 1px"
+      >
+        {{ category|capitalize }}
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="row">
+    {% for category in categories[3:5] %}
+    <div class="col-12 col-md-4 mb-4">
+      <a
+        href="{{ url_for('main_bp.index', category=category) }}"
+        class="btn btn-outline-primary w-100 py-4 fs-3 shadow-sm text-center"
+        style="border-radius: 1.5rem; font-weight: 600; letter-spacing: 1px"
+      >
+        {{ category|capitalize }}
+      </a>
+    </div>
+    {% endfor %} {# Add empty columns to keep alignment if less than 3 in this
+    row #} {% for _ in range(3 - categories[3:5]|length) %}
+    <div class="col-12 col-md-4 mb-4"></div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="container" style="margin-top: 40px; max-width: 1100px">
+  <div class="mb-3">
+    <a href="{{ url_for('main_bp.index') }}" class="btn btn-link fs-5 p-0">
+      &larr; Back to Categories
+    </a>
+  </div>
+  <h2 class="mb-4" style="text-align: left">
+    Products in {{ selected_category|capitalize }}
+  </h2>
+  {% if products %}
+  <div class="row mb-3">
+    {% for product in products[0:3] %}
+    <div class="col-12 col-md-4 mb-4">
+      <div class="card h-100 shadow-sm w-100">
+        <img
+          src="{{ product.image_url or url_for('static', filename='default.jpg') }}"
+          class="card-img-top"
+          alt="{{ product.name }}"
+          style="height: 200px; object-fit: cover"
+        />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p
+            class="card-text mb-2 text-success fw-semibold"
+            style="font-size: 1.1rem"
+          >
+            ₹{{ "%.2f"|format(product.price) }}
+          </p>
+          <a
+            href="{{ url_for('main_bp.product_detail', product_id=product.id) }}"
+            class="btn btn-primary mt-auto w-100"
+          >
+            View Product
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="row">
+    {% for product in products[3:5] %}
+    <div class="col-12 col-md-4 mb-4">
+      <div class="card h-100 shadow-sm w-100">
+        <img
+          src="{{ product.image_url or url_for('static', filename='default.jpg') }}"
+          class="card-img-top"
+          alt="{{ product.name }}"
+          style="height: 200px; object-fit: cover"
+        />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p
+            class="card-text mb-2 text-success fw-semibold"
+            style="font-size: 1.1rem"
+          >
+            ₹{{ "%.2f"|format(product.price) }}
+          </p>
+          <a
+            href="{{ url_for('main_bp.product_detail', product_id=product.id) }}"
+            class="btn btn-primary mt-auto w-100"
+          >
+            View Product
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %} {# Add empty columns to keep alignment if less than 3 in this
+    row #} {% for _ in range(3 - products[3:5]|length) %}
+    <div class="col-12 col-md-4 mb-4"></div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info mt-4 text-center" role="alert">
+    No products found in this category.
+  </div>
+  {% endif %}
+</div>
+{% endif %} {% endblock %}

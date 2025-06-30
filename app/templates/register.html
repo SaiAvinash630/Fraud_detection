@@ -1,0 +1,49 @@
+{% extends "base.html" %} {% block title %}Register - ShopNow{% endblock %} {%
+block content %}
+<h2 class="mb-4 text-center">Create an Account</h2>
+
+<div class="card shadow-sm mx-auto" style="max-width: 400px">
+  <div class="card-body">
+    <form method="POST" novalidate aria-label="Registration form">
+      {{ form.hidden_tag() }}
+
+      <!-- Email -->
+      <div class="mb-3">
+        {{ form.email.label(class="form-label") }} {{
+        form.email(class="form-control", autofocus=True) }} {% for error in
+        form.email.errors %}
+        <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Password -->
+      <div class="mb-3">
+        {{ form.password.label(class="form-label") }} {{
+        form.password(class="form-control") }} {% for error in
+        form.password.errors %}
+        <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-3">
+        {{ form.confirm_password.label(class="form-label") }} {{
+        form.confirm_password(class="form-control") }} {% for error in
+        form.confirm_password.errors %}
+        <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Submit -->
+      <div class="d-grid">
+        {{ form.submit(class="btn btn-success btn-lg") }}
+      </div>
+    </form>
+
+    <p class="mt-4 text-center text-muted">
+      Already have an account?
+      <a href="{{ url_for('main_bp.login') }}">Login here</a>.
+    </p>
+  </div>
+</div>
+{% endblock %}

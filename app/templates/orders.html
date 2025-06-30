@@ -1,0 +1,57 @@
+{% extends "base.html" %} {% block title %}My Orders - ShopNow{% endblock %} {%
+block content %}
+<h2 class="mb-4">My Orders</h2>
+
+{% if orders %} {% for order in orders %}
+<div
+  class="card mb-4 shadow-sm"
+  role="region"
+  aria-label="Order {{ order.id }}"
+>
+  <div
+    class="card-header bg-dark text-light d-flex justify-content-between align-items-center"
+  >
+    <span>Order #{{ order.id }}</span>
+    <small>{{ order.timestamp.strftime('%b %d, %Y %I:%M %p') }}</small>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      {% for item in order.items %}
+      <div class="col-md-6 d-flex mb-3">
+        {% if item.product.image_url %}
+        <img
+          src="{{ item.product.image_url }}"
+          class="img-thumbnail me-3"
+          alt="{{ item.product.name }}"
+          loading="lazy"
+          style="width: 100px; height: 100px; object-fit: cover"
+        />
+        {% else %}
+        <div
+          class="bg-light d-flex align-items-center justify-content-center text-muted border me-3"
+          style="width: 100px; height: 100px"
+        >
+          <span class="small">No Image</span>
+        </div>
+        {% endif %}
+        <div>
+          <h6 class="mb-1">{{ item.product.name }}</h6>
+          <p class="mb-1">Qty: {{ item.quantity }}</p>
+          <p class="mb-0 text-muted">
+            Unit Price: ₹{{ "%.2f"|format(item.product.price) }}
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="border-top pt-3 mt-3 text-end">
+      <strong>Total: ₹{{ "%.2f"|format(order.total_amount) }}</strong>
+    </div>
+  </div>
+</div>
+{% endfor %} {% else %}
+<div class="alert alert-info mt-5 text-center" role="alert">
+  <i class="bi bi-emoji-frown fs-3"></i><br />
+  You haven't placed any orders yet.
+</div>
+{% endif %} {% endblock %}
