@@ -127,3 +127,31 @@ class Review(db.Model):
     rating = db.Column(db.Integer)  # e.g. 1–5 stars
     comment = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class FeedbackCase(db.Model):
+    """
+    Model for feedback cases on transactions.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))  # <-- Fix here
+    user_id = db.Column(db.Integer)
+    payment_method = db.Column(db.String(50))
+    device = db.Column(db.String(50))
+    category = db.Column(db.String(50))
+    amount = db.Column(db.Float)
+    quantity = db.Column(db.Integer)
+    total_value = db.Column(db.Float)
+    num_trans_24h = db.Column(db.Integer)
+    num_failed_24h = db.Column(db.Integer)
+    no_of_cards_from_ip = db.Column(db.Integer)
+    account_age_days = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime)
+    prediction = db.Column(db.String(50))
+    probability = db.Column(db.Float)
+    anomaly_score = db.Column(db.Float)
+    admin_status = db.Column(db.String(20), default="Pending")
+
+    product = db.relationship("Product", uselist=False)

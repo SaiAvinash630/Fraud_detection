@@ -1,0 +1,82 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Feedback Cases Review</h2>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Payment Method</th>
+          <th>Device</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Quantity</th>
+          <th>Total Value</th>
+          <th>Num Trans 24h</th>
+          <th>Num Failed 24h</th>
+          <th>Cards from IP</th>
+          <th>Account Age (days)</th>
+          <th>Timestamp</th>
+          <th>Prediction</th>
+          <th>Probability</th>
+          <th>Anomaly Score</th>
+          <th>Status</th>
+          <th>Action</th>
+          <th>Product Name</th>
+          <th>Product Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for case in cases %}
+        <tr
+          class="{% if case.admin_status == 'Pending' %}table-warning{% elif case.admin_status == 'Approved' %}table-success{% elif case.admin_status == 'Rejected' %}table-danger{% endif %}"
+        >
+          <td>{{ case.id }}</td>
+          <td>{{ case.user_id }}</td>
+          <td>{{ case.payment_method }}</td>
+          <td>{{ case.device }}</td>
+          <td>{{ case.category }}</td>
+          <td>{{ case.amount }}</td>
+          <td>{{ case.quantity }}</td>
+          <td>{{ case.total_value }}</td>
+          <td>{{ case.num_trans_24h }}</td>
+          <td>{{ case.num_failed_24h }}</td>
+          <td>{{ case.no_of_cards_from_ip }}</td>
+          <td>{{ case.account_age_days }}</td>
+          <td>{{ case.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{{ case.prediction }}</td>
+          <td>{{ case.probability }}</td>
+          <td>{{ case.anomaly_score }}</td>
+          <td>
+            <span
+              class="badge {% if case.admin_status == 'Pending' %}bg-warning text-dark {% elif case.admin_status == 'Approved' %}bg-success {% elif case.admin_status == 'Rejected' %}bg-danger {% endif %}"
+            >
+              {{ case.admin_status }}
+            </span>
+          </td>
+          <td>
+            {% if case.admin_status == "Pending" %}
+            <a
+              href="{{ url_for('main_bp.feedback_case_action', case_id=case.id, action='approve') }}"
+              class="btn btn-success btn-sm mb-1"
+              >Approve</a
+            >
+            <a
+              href="{{ url_for('main_bp.feedback_case_action', case_id=case.id, action='reject') }}"
+              class="btn btn-danger btn-sm mb-1"
+              >Reject</a
+            >
+            {% else %}
+            <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td>{{ case.product.name if case.product else 'N/A' }}</td>
+          <td>{{ case.product.price if case.product else 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

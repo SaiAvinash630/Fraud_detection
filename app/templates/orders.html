@@ -18,7 +18,7 @@ block content %}
     <div class="row">
       {% for item in order.items %}
       <div class="col-md-6 d-flex mb-3">
-        {% if item.product.image_url %}
+        {% if item.product and item.product.image_url %}
         <img
           src="{{ item.product.image_url }}"
           class="img-thumbnail me-3"
@@ -35,10 +35,13 @@ block content %}
         </div>
         {% endif %}
         <div>
-          <h6 class="mb-1">{{ item.product.name }}</h6>
+          <h6 class="mb-1">
+            {{ item.product.name if item.product else 'Product Deleted' }}
+          </h6>
           <p class="mb-1">Qty: {{ item.quantity }}</p>
           <p class="mb-0 text-muted">
-            Unit Price: ₹{{ "%.2f"|format(item.product.price) }}
+            Unit Price: {% if item.product %} ₹{{
+            "%.2f"|format(item.product.price) }} {% else %} N/A {% endif %}
           </p>
         </div>
       </div>

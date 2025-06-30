@@ -11,7 +11,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db, login_manager
-from .models import User, Product, CartItem, Order, OrderItem, WishlistItem, Review
+from .models import User, Product, CartItem, Order, OrderItem, WishlistItem, Review, FeedbackCase
 from .forms import (
     RegisterForm,
     LoginForm,
@@ -55,8 +55,8 @@ class FraudPredictor:
         # Decision logic
         if xgb_prob > 0.9:
             decision = "FRAUD"
-        elif xgb_prob > 0.5 and iso_score < self.iso_thresh:
-        # elif xgb_prob > 0.6 and iso_score < 0.02:
+        # elif xgb_prob > 0.5 and iso_score < self.iso_thresh:
+        elif xgb_prob > 0.6 and iso_score < 0.01:
             decision = "NEED TO TAKE FEEDBACK"
         else:
             decision = "GENUINE"
@@ -101,7 +101,7 @@ class FraudPredictor:
         }
 
 
-fraud_predictor = FraudPredictor("models/hybrid_model_new.pkl")
+fraud_predictor = FraudPredictor("models/hybrid.pkl")
 
 main_bp = Blueprint("main_bp", __name__)
 
@@ -518,31 +518,29 @@ def admin():
 @main_bp.route('/payment', methods=['GET', 'POST'])
 @login_required
 def payment():
-
     account_age_days = (datetime.now() - current_user.created_at).days if current_user.created_at else 0
-    # print("Payment route called")  # Debug
     allowed_methods = ['Credit Card', 'Debit Card', 'Wallet', 'Net Banking']
 
     if request.method == 'POST':
-        # print("POST request received")  # Debug
         payment_method = request.form.get('payment_method')
-        # print("Payment method:", payment_method)  # Debug
-
         cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-        # print("Cart items:", cart_items)  # Debug
+        # Filter out cart items with missing products
+        cart_items = [item for item in cart_items if item.product is not None]
 
-        # Validate payment method
         if payment_method not in allowed_methods:
             flash("Please select a valid payment method.")
             return render_template('payment.html')
 
         if not cart_items:
-            flash("Your cart is empty.")
+            flash("Your cart is empty or contains unavailable products.")
             return redirect(url_for("main_bp.cart"))
-        category = cart_items[0].product.category if cart_items else "Unknown"
+
+        # Safely get category and product_id
+        first_product = cart_items[0].product if cart_items else None
+        category = first_product.category if first_product else "Unknown"
+        product_id = first_product.id if first_product else None
+
         total_amount = sum(item.product.price * item.quantity for item in cart_items)
-        # device = request.user_agent.platform or "Laptop"
-        
         transaction_time = datetime.now()
         time_24h_ago = transaction_time - timedelta(hours=24)
         orders_last_24h = Order.query.filter(
@@ -553,11 +551,40 @@ def payment():
         num_trans_24h = sum(1 for o in orders_last_24h if o.status == "Completed")
         num_failed_24h = sum(1 for o in orders_last_24h if o.status == "Cancelled")
         quantity = sum(item.quantity for item in cart_items)
+        # Compute freq_last_24h: number of completed orders in last 24h
+        freq_last_24h = Order.query.filter(
+            Order.user_id == current_user.id,
+            Order.timestamp >= time_24h_ago,
+            Order.timestamp <= transaction_time,
+            Order.status == "Completed"
+        ).count()
 
+        # Compute amount_last_24h: total amount spent in last 24h
+        amount_last_24h = db.session.query(db.func.sum(Order.total_amount)).filter(
+            Order.user_id == current_user.id,
+            Order.timestamp >= time_24h_ago,
+            Order.timestamp <= transaction_time,
+            Order.status == "Completed"
+        ).scalar() or 0.0
+
+        # Compute sudden_category_switch: compare last completed order's category to current
+        last_order = Order.query.filter(
+            Order.user_id == current_user.id,
+            Order.status == "Completed"
+        ).order_by(Order.timestamp.desc()).first()
+        if last_order:
+            last_order_item = OrderItem.query.filter_by(order_id=last_order.id).first()
+            if last_order_item and last_order_item.product:
+                last_category = last_order_item.product.category
+            else:
+                last_category = None
+            sudden_category_switch = int(last_category != category) if last_category else 0
+        else:
+            sudden_category_switch = 0
         sample_transaction = {
             "account_age_days": account_age_days,
             "payment_method": payment_method,
-            "device": "Laptop",  # Assuming device is always Laptop for simplicity
+            "device": "Laptop",
             "category": category,
             "amount": total_amount,
             "quantity": quantity,
@@ -565,37 +592,17 @@ def payment():
             "num_trans_24h": num_trans_24h,
             "num_failed_24h": num_failed_24h,
             "no_of_cards_from_ip": getattr(current_user, "no_of_cards_from_ip", 0),
+            "promo_used": 0,  # or set based on your logic
+            "freq_last_24h": freq_last_24h,
+            "amount_last_24h": amount_last_24h,
+            "sudden_category_switch": sudden_category_switch,
             "User_id": current_user.id,
             "TimeStamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
-        print("Payment route called")
-        print("POST request received")
-        print("Payment method:", payment_method)
-        print("Before prediction")
-        prediction = fraud_predictor.predict(sample_transaction)
-        print("After prediction")
-        # print("Before prediction")  # Debug
-        # prediction = fraud_predictor.predict(sample_transaction)
-        # print("After prediction")  # Debug
 
-        # attempt = PaymentAttempt(
-        #     user_id=current_user.id,
-        #     amount=total_amount,
-        #     payment_method=payment_method,
-        #     device="Laptop",
-        #     category=category,
-        #     quantity=quantity,
-        #     total_value=total_amount,
-        #     num_trans_24h=num_trans_24h,
-        #     num_failed_24h=num_failed_24h,
-        #     no_of_cards_from_ip=getattr(current_user, "no_of_cards_from_ip", 0),
-        #     timestamp=datetime.now(),
-        #     prediction=prediction['decision'],
-        #     probability=prediction['probability'],
-        #     anomaly_score=prediction['anomaly_score'],
-        # )
-        # db.session.add(attempt)
-        # db.session.commit()
+        prediction = fraud_predictor.predict(sample_transaction)
+
+        # Set order status based on prediction
         if prediction['decision'] == 'GENUINE':
             order_status = "Completed"
         elif prediction['decision'] == 'FRAUD':
@@ -604,13 +611,14 @@ def payment():
             order_status = "Needs Feedback"
         else:
             order_status = "Unknown"
+
         # Always create an Order record for every attempt
         order = Order(
             user_id=current_user.id,
             total_amount=total_amount,
             payment_method=payment_method,
             device="Laptop",
-            status=order_status,  # "Completed", "Cancelled", "Needs Feedback"
+            status=order_status,
             timestamp=datetime.now(),
         )
         db.session.add(order)
@@ -627,8 +635,96 @@ def payment():
             CartItem.query.filter_by(user_id=current_user.id).delete()
             db.session.commit()
             return render_template('payment.html', payment_success=True, prediction=prediction, payment_method=payment_method, total_amount=total_amount)
+        elif prediction['decision'] == 'NEED TO TAKE FEEDBACK':
+            feedback_case = FeedbackCase(
+                user_id=current_user.id,
+                order_id=order.id,
+                payment_method=payment_method,
+                device="Laptop",
+                category=category,
+                amount=total_amount,
+                quantity=quantity,
+                total_value=total_amount,
+                num_trans_24h=num_trans_24h,
+                num_failed_24h=num_failed_24h,
+                no_of_cards_from_ip=getattr(current_user, "no_of_cards_from_ip", 0),
+                account_age_days=account_age_days,
+                timestamp=datetime.now(),
+                prediction=prediction['decision'],
+                probability=prediction['probability'],
+                anomaly_score=prediction['anomaly_score'],
+                admin_status="Pending",
+                product_id=product_id,  # <-- safe assignment
+            )
+            db.session.add(feedback_case)
+            db.session.commit()
+            return render_template('payment.html', payment_success=False, prediction=prediction, payment_method=payment_method, total_amount=total_amount, feedback_required=True)
         else:
             # Payment not successful, show model output
             return render_template('payment.html', payment_success=False, prediction=prediction, payment_method=payment_method, total_amount=total_amount)
 
     return render_template('payment.html')
+
+
+@main_bp.route("/admin/feedback_cases")
+@login_required
+def admin_feedback_cases():
+    if not current_user.is_admin:
+        flash("Access denied.")
+        return redirect(url_for("main_bp.index"))
+    cases = FeedbackCase.query.order_by(FeedbackCase.timestamp.desc()).all()
+    cases = [case for case in cases if case.product is not None]
+    return render_template("admin_feedback_cases.html", cases=cases)
+
+
+@main_bp.route("/admin/feedback_case/<int:case_id>/<action>")
+@login_required
+def feedback_case_action(case_id, action):
+    if not current_user.is_admin:
+        flash("Access denied.")
+        return redirect(url_for("main_bp.index"))
+    case = FeedbackCase.query.get_or_404(case_id)
+    if action == "approve":
+        case.admin_status = "Approved"
+        # Update the related order to Completed
+        if case.order_id:
+            order = Order.query.get(case.order_id)
+            if order:
+                order.status = "Completed"
+                # Create order items for all cart items at the time of payment
+                # (Assuming you want to restore the cart items for this order)
+                cart_items = CartItem.query.filter_by(user_id=case.user_id).all()
+                for item in cart_items:
+                    order_item = OrderItem(
+                        order_id=order.id,
+                        product_id=item.product_id,
+                        quantity=item.quantity
+                    )
+                    product = Product.query.get(item.product_id)
+                    if product:
+                        product.stock -= item.quantity
+                    db.session.add(order_item)
+                # Clear the cart
+                CartItem.query.filter_by(user_id=case.user_id).delete()
+    elif action == "reject":
+        case.admin_status = "Rejected"
+        # Optionally, mark order as Cancelled
+        if case.order_id:
+            order = Order.query.get(case.order_id)
+            if order:
+                order.status = "Cancelled"
+    db.session.commit()
+    flash(f"Case {action}d.")
+    return redirect(url_for("main_bp.admin_feedback_cases"))
+
+from app import db
+from app.models import FeedbackCase, Product
+
+# Find all feedback cases with missing products
+broken_cases = [case for case in FeedbackCase.query.all() if not Product.query.get(case.product_id)]
+print(broken_cases)
+
+# Optionally, delete them:
+for case in broken_cases:
+    db.session.delete(case)
+db.session.commit()
