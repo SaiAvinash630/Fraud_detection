@@ -1,0 +1,238 @@
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+  const prediction = {{ prediction | tojson | safe if prediction is defined else 'null' }};
+</script>
+
+<!-- Floating Chat Icon -->
+<button
+  onclick="toggleChat()"
+  id="chat-toggle-button"
+  aria-label="Open chat"
+  class="fixed bottom-6 right-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white p-4 rounded-full shadow-2xl z-50 flex items-center justify-center transition-transform transform hover:scale-110 active:scale-95"
+  style="width: 56px; height: 56px"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    class="w-7 h-7 drop-shadow-md"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.72 9.72 0 01-4-.86L3 21l1.86-5.09A7.004 7.004 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+    />
+  </svg>
+</button>
+
+<!-- Chat Window -->
+<div
+  id="chatbot-container"
+  class="fixed bottom-20 right-6 w-96 max-w-full z-50 hidden bg-white bg-opacity-90 backdrop-blur-md border border-gray-300 rounded-3xl shadow-xl flex flex-col overflow-hidden"
+  style="height: 560px"
+>
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-3xl text-white font-semibold text-lg shadow-md select-none"
+  >
+    <span>Support Chat</span>
+    <button
+      onclick="toggleChat()"
+      class="text-white text-3xl font-extrabold leading-none hover:opacity-80 transition-opacity"
+    >
+      &times;
+    </button>
+  </div>
+
+  <!-- Chat Messages -->
+  <div
+    id="chat-messages"
+    class="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100"
+  >
+    <div class="text-center text-gray-400 italic select-none">
+      Choose a question below or ask your own.
+    </div>
+  </div>
+
+  <!-- FAQ Buttons -->
+  <div
+    class="px-6 pt-4 pb-2 border-t border-gray-300 flex flex-wrap gap-3 bg-white"
+  >
+    <button
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      data-question="What does 'GENUINE' decision mean?"
+      type="button"
+    >
+      What does 'GENUINE' decision mean?
+    </button>
+    <button
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      data-question="Why was my transaction flagged as fraud?"
+      type="button"
+    >
+      Why was my transaction flagged as fraud?
+    </button>
+    <button
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      data-question="What are fraud indicators?"
+      type="button"
+    >
+      What are fraud indicators?
+    </button>
+    <button
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      data-question="How is the fraud probability calculated?"
+      type="button"
+    >
+      How is the fraud probability calculated?
+    </button>
+  </div>
+
+  <!-- Input Area -->
+  <form
+    id="chat-form"
+    class="flex items-center gap-3 px-6 py-4 border-t border-gray-300 bg-white"
+    onsubmit="return sendUserMessage(event);"
+  >
+    <input
+      type="text"
+      id="chat-input"
+      placeholder="Type your question..."
+      autocomplete="off"
+      required
+      class="flex-grow bg-gray-100 rounded-full py-3 px-5 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 text-gray-700 transition"
+    />
+    <button
+      type="submit"
+      class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-full px-6 py-3 shadow-lg transition-transform transform active:scale-95"
+    >
+      Send
+    </button>
+  </form>
+</div>
+
+<script>
+  const chatInput = document.getElementById("chat-input");
+  const chatMessages = document.getElementById("chat-messages");
+  const chatbotContainer = document.getElementById("chatbot-container");
+  const toggleBtn = document.getElementById("chat-toggle-button");
+
+  function toggleChat() {
+    chatbotContainer.classList.toggle("hidden");
+    toggleBtn.classList.toggle("hidden");
+    if (!chatbotContainer.classList.contains("hidden")) {
+      chatInput.focus();
+    }
+  }
+
+  async function sendUserMessage(event) {
+    event.preventDefault();
+    const question = chatInput.value.trim();
+    if (!question) return false;
+
+    appendMessage("You", question);
+    chatInput.value = "";
+    await sendToBackend(question);
+    return false;
+  }
+
+  chatInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter" && chatInput.value.trim()) {
+      e.preventDefault();
+      document.getElementById("chat-form").dispatchEvent(new Event("submit"));
+    }
+  });
+
+  document.querySelectorAll(".faq-btn").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const question = button.getAttribute("data-question");
+      appendMessage("You", question);
+      await sendToBackend(question);
+    });
+  });
+
+  function appendMessage(sender, messageHTML) {
+    const bubble = document.createElement("div");
+    bubble.className =
+      sender === "You"
+        ? "self-end max-w-[80%] text-right"
+        : "self-start max-w-[80%] text-left";
+
+    bubble.innerHTML = `
+      <div class="inline-block px-4 py-2 rounded-2xl ${
+        sender === "You"
+          ? "bg-indigo-100 text-indigo-900"
+          : "bg-indigo-600 text-white shadow-md"
+      } break-words whitespace-pre-line select-text">
+        ${messageHTML}
+      </div>
+    `;
+
+    chatMessages.appendChild(bubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function sendToBackend(message) {
+    try {
+      const response = await fetch("/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, prediction }),
+      });
+      const data = await response.json();
+
+      try {
+        const parsed = JSON.parse(data.answer);
+        if (parsed.decision) {
+          const prob = Math.round((1 - parsed.probability) * 100);
+          const color =
+            parsed.decision === "GENUINE" ? "bg-green-500" : "bg-red-500";
+
+          let html = `
+            <div class="font-semibold mb-1">Decision:
+              <span class="${color} text-white px-2 py-1 rounded">${parsed.decision}</span>
+            </div>
+            <div class="mb-2">
+              <div class="text-xs mb-1">Fraud Likelihood: ${prob}%</div>
+              <div class="w-full bg-gray-200 rounded h-2">
+                <div class="${color} h-2 rounded" style="width:${prob}%"></div>
+              </div>
+            </div>`;
+
+          if (parsed.fraud_indicators?.length) {
+            html += `<div class="text-sm mt-2 font-medium mb-1">Key Indicators:</div>`;
+            parsed.fraud_indicators.forEach((ind) => {
+              html += `
+                <div class="mb-1">
+                  <div class="flex justify-between text-xs text-gray-600">
+                    <span>${ind.feature}</span>
+                    <span>${parseFloat(ind.impact_percent).toFixed(1)}%</span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded h-1.5">
+                    <div class="bg-blue-400 h-1.5 rounded" style="width:${
+                      ind.impact_percent
+                    }%"></div>
+                  </div>
+                </div>`;
+            });
+          }
+          appendMessage("Support", html);
+          return;
+        }
+      } catch {
+        // Non-JSON fallback
+      }
+      appendMessage("Support", data.answer);
+    } catch (error) {
+      appendMessage(
+        "Support",
+        "Sorry, something went wrong. Please try again later."
+      );
+      console.error(error);
+    }
+  }
+</script>

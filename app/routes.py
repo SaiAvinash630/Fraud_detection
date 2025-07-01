@@ -7,11 +7,22 @@ checkout flow, review system, order history, admin controls, and profile updates
 """
 
 from datetime import datetime, timedelta
+import json
+import os
 from flask import Blueprint, render_template, redirect, url_for, flash, request, g
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db, login_manager
-from .models import User, Product, CartItem, Order, OrderItem, WishlistItem, Review, FeedbackCase
+from .models import (
+    User,
+    Product,
+    CartItem,
+    Order,
+    OrderItem,
+    WishlistItem,
+    Review,
+    FeedbackCase,
+)
 from .forms import (
     RegisterForm,
     LoginForm,
@@ -31,6 +42,8 @@ import shap
 from app.feature_engineering import FeatureEngineer
 from sklearn.calibration import CalibratedClassifierCV
 from app.model_utils import retrain_hybrid_model
+
+
 # Define the FraudPredictor class (must match how you saved the model)
 class FraudPredictor:
     def __init__(self, model_path):
@@ -105,6 +118,46 @@ class FraudPredictor:
 fraud_predictor = FraudPredictor("models/hybrid.pkl")
 
 main_bp = Blueprint("main_bp", __name__)
+
+from flask import request, jsonify
+from groq import Groq
+
+
+@main_bp.route("/chatbot", methods=["POST"])
+@login_required
+def chatbot():
+    user_message = request.json.get("message")
+    prediction = request.json.get("prediction")
+
+    # Optional: Get more details from DB if needed
+    label = "fraud"  # Or use prediction["decision"]
+
+    # Format prediction summary
+    formatted_prediction = json.dumps(prediction, indent=2)
+
+    prompt = f"""
+    A user has a question about a transaction. 
+    Fraud detection model returned the following result:
+
+    {formatted_prediction}
+
+    User's question: {user_message}
+    """
+
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful support assistant that explains fraud detection results in simple terms.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        model="llama-3.3-70b-versatile",
+    )
+
+    answer = chat_completion.choices[0].message.content
+    return jsonify({"answer": answer})
 
 
 @login_manager.user_loader
@@ -284,7 +337,6 @@ def update_cart(item_id):
 
 
 @main_bp.route("/remove_from_cart/<int:item_id>")
-
 @login_required
 def remove_from_cart(item_id):
     item = CartItem.query.get_or_404(item_id)
@@ -516,21 +568,25 @@ def admin():
     return render_template("admin.html", products=products, form=form)
 
 
-@main_bp.route('/payment', methods=['GET', 'POST'])
+@main_bp.route("/payment", methods=["GET", "POST"])
 @login_required
 def payment():
-    account_age_days = (datetime.now() - current_user.created_at).days if current_user.created_at else 0
-    allowed_methods = ['Credit Card', 'Debit Card', 'Wallet', 'Net Banking']
+    account_age_days = (
+        (datetime.now() - current_user.created_at).days
+        if current_user.created_at
+        else 0
+    )
+    allowed_methods = ["Credit Card", "Debit Card", "Wallet", "Net Banking"]
 
-    if request.method == 'POST':
-        payment_method = request.form.get('payment_method')
+    if request.method == "POST":
+        payment_method = request.form.get("payment_method")
         cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
         # Filter out cart items with missing products
         cart_items = [item for item in cart_items if item.product is not None]
 
         if payment_method not in allowed_methods:
             flash("Please select a valid payment method.")
-            return render_template('payment.html')
+            return render_template("payment.html")
 
         if not cart_items:
             flash("Your cart is empty or contains unavailable products.")
@@ -557,29 +613,39 @@ def payment():
             Order.user_id == current_user.id,
             Order.timestamp >= time_24h_ago,
             Order.timestamp <= transaction_time,
-            Order.status == "Completed"
+            Order.status == "Completed",
         ).count()
 
         # Compute amount_last_24h: total amount spent in last 24h
-        amount_last_24h = db.session.query(db.func.sum(Order.total_amount)).filter(
-            Order.user_id == current_user.id,
-            Order.timestamp >= time_24h_ago,
-            Order.timestamp <= transaction_time,
-            Order.status == "Completed"
-        ).scalar() or 0.0
+        amount_last_24h = (
+            db.session.query(db.func.sum(Order.total_amount))
+            .filter(
+                Order.user_id == current_user.id,
+                Order.timestamp >= time_24h_ago,
+                Order.timestamp <= transaction_time,
+                Order.status == "Completed",
+            )
+            .scalar()
+            or 0.0
+        )
 
         # Compute sudden_category_switch: compare last completed order's category to current
-        last_order = Order.query.filter(
-            Order.user_id == current_user.id,
-            Order.status == "Completed"
-        ).order_by(Order.timestamp.desc()).first()
+        last_order = (
+            Order.query.filter(
+                Order.user_id == current_user.id, Order.status == "Completed"
+            )
+            .order_by(Order.timestamp.desc())
+            .first()
+        )
         if last_order:
             last_order_item = OrderItem.query.filter_by(order_id=last_order.id).first()
             if last_order_item and last_order_item.product:
                 last_category = last_order_item.product.category
             else:
                 last_category = None
-            sudden_category_switch = int(last_category != category) if last_category else 0
+            sudden_category_switch = (
+                int(last_category != category) if last_category else 0
+            )
         else:
             sudden_category_switch = 0
         sample_transaction = {
@@ -604,11 +670,11 @@ def payment():
         prediction = fraud_predictor.predict(sample_transaction)
 
         # Set order status based on prediction
-        if prediction['decision'] == 'GENUINE':
+        if prediction["decision"] == "GENUINE":
             order_status = "Completed"
-        elif prediction['decision'] == 'FRAUD':
+        elif prediction["decision"] == "FRAUD":
             order_status = "Cancelled"
-        elif prediction['decision'] == 'NEED TO TAKE FEEDBACK':
+        elif prediction["decision"] == "NEED TO TAKE FEEDBACK":
             order_status = "Needs Feedback"
         else:
             order_status = "Unknown"
@@ -625,18 +691,26 @@ def payment():
         db.session.add(order)
         db.session.commit()
 
-        if prediction['decision'] == 'GENUINE':
+        if prediction["decision"] == "GENUINE":
             # Payment is successful, create order items, clear cart, etc.
             for item in cart_items:
                 order_item = OrderItem(
-                    order_id=order.id, product_id=item.product.id, quantity=item.quantity
+                    order_id=order.id,
+                    product_id=item.product.id,
+                    quantity=item.quantity,
                 )
                 item.product.stock -= item.quantity
                 db.session.add(order_item)
             CartItem.query.filter_by(user_id=current_user.id).delete()
             db.session.commit()
-            return render_template('payment.html', payment_success=True, prediction=prediction, payment_method=payment_method, total_amount=total_amount)
-        elif prediction['decision'] == 'NEED TO TAKE FEEDBACK':
+            return render_template(
+                "payment.html",
+                payment_success=True,
+                prediction=prediction,
+                payment_method=payment_method,
+                total_amount=total_amount,
+            )
+        elif prediction["decision"] == "NEED TO TAKE FEEDBACK":
             feedback_case = FeedbackCase(
                 user_id=current_user.id,
                 order_id=order.id,
@@ -651,9 +725,9 @@ def payment():
                 no_of_cards_from_ip=getattr(current_user, "no_of_cards_from_ip", 0),
                 account_age_days=account_age_days,
                 timestamp=datetime.now(),
-                prediction=prediction['decision'],
-                probability=prediction['probability'],
-                anomaly_score=prediction['anomaly_score'],
+                prediction=prediction["decision"],
+                probability=prediction["probability"],
+                anomaly_score=prediction["anomaly_score"],
                 admin_status="Pending",
                 product_id=product_id,  # <-- safe assignment
             )
@@ -662,12 +736,35 @@ def payment():
             feedback_count = FeedbackCase.query.count()
             if feedback_count % 10 == 0:
                 retrain_hybrid_model()
-            return render_template('payment.html', payment_success=False, prediction=prediction, payment_method=payment_method, total_amount=total_amount, feedback_required=True)
+            return render_template(
+                "payment.html",
+                payment_success=False,
+                prediction=prediction,
+                payment_method=payment_method,
+                total_amount=total_amount,
+                feedback_required=True,
+            )
         else:
-            # Payment not successful, show model output
-            return render_template('payment.html', payment_success=False, prediction=prediction, payment_method=payment_method, total_amount=total_amount)
 
-    return render_template('payment.html')
+            def convert_numpy(obj):
+                if isinstance(obj, np.float32) or isinstance(obj, np.float64):
+                    return float(obj)
+                if isinstance(obj, dict):
+                    return {k: convert_numpy(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [convert_numpy(i) for i in obj]
+                return obj
+
+            # Payment not successful, show model output
+            return render_template(
+                "payment.html",
+                payment_success=False,
+                prediction=convert_numpy(prediction),
+                payment_method=payment_method,
+                total_amount=total_amount,
+            )
+
+    return render_template("payment.html")
 
 
 @main_bp.route("/admin/feedback_cases")
@@ -702,7 +799,7 @@ def feedback_case_action(case_id, action):
                     order_item = OrderItem(
                         order_id=order.id,
                         product_id=item.product_id,
-                        quantity=item.quantity
+                        quantity=item.quantity,
                     )
                     product = Product.query.get(item.product_id)
                     if product:
@@ -723,11 +820,14 @@ def feedback_case_action(case_id, action):
     flash(f"Case {action}d.")
     return redirect(url_for("main_bp.admin_feedback_cases"))
 
+
 from app import db
 from app.models import FeedbackCase, Product
 
 # Find all feedback cases with missing products
-broken_cases = [case for case in FeedbackCase.query.all() if not Product.query.get(case.product_id)]
+broken_cases = [
+    case for case in FeedbackCase.query.all() if not Product.query.get(case.product_id)
+]
 print(broken_cases)
 
 # Optionally, delete them:
