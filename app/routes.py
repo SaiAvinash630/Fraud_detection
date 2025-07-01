@@ -30,6 +30,7 @@ import numpy as np
 import shap
 from app.feature_engineering import FeatureEngineer
 from sklearn.calibration import CalibratedClassifierCV
+from app.model_utils import retrain_hybrid_model
 # Define the FraudPredictor class (must match how you saved the model)
 class FraudPredictor:
     def __init__(self, model_path):
@@ -658,6 +659,9 @@ def payment():
             )
             db.session.add(feedback_case)
             db.session.commit()
+            feedback_count = FeedbackCase.query.count()
+            if feedback_count % 10 == 0:
+                retrain_hybrid_model()
             return render_template('payment.html', payment_success=False, prediction=prediction, payment_method=payment_method, total_amount=total_amount, feedback_required=True)
         else:
             # Payment not successful, show model output
@@ -713,6 +717,8 @@ def feedback_case_action(case_id, action):
             order = Order.query.get(case.order_id)
             if order:
                 order.status = "Cancelled"
+        # Clear the cart for this user
+        CartItem.query.filter_by(user_id=case.user_id).delete()
     db.session.commit()
     flash(f"Case {action}d.")
     return redirect(url_for("main_bp.admin_feedback_cases"))
