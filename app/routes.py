@@ -136,7 +136,7 @@ def chatbot():
     formatted_prediction = json.dumps(prediction, indent=2)
 
     prompt = f"""
-    A user has a question about a transaction. 
+    A user has a question about a transaction and make the text simple and clear. 
     Fraud detection model returned the following result:
 
     {formatted_prediction}
@@ -149,7 +149,24 @@ def chatbot():
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful support assistant that explains fraud detection results in simple terms.",
+                "content": """You are a fraud support assistant for a financial services company.
+Your job is to respond calmly, professionally, and reassuringly to customers who have received fraud-related alerts or decisions about their transactions.
+
+You must not reveal internal model details or decision logic, but you can explain concepts in a simplified, customer-friendly way.
+
+Use plain English.
+Always maintain a respectful, helpful tone.
+
+Here's how you should behave:
+
+ Acknowledge the user's concern.
+
+Provide helpful, general explanations.
+
+Avoid technical terms unless asked.
+
+Do not reveal raw fraud scores, algorithm weights, or internal flags unless it's part of a friendly summary.
+ If the user asks something sensitive, respond gently and steer them toward contacting human support if needed and make the message short and simple""",
             },
             {"role": "user", "content": prompt},
         ],
@@ -690,9 +707,21 @@ def payment():
         )
         db.session.add(order)
         db.session.commit()
+        def convert_numpy(obj):
+                import numpy as np
+                if isinstance(obj, (np.float32, np.float64)):
+                    return float(obj)
+                if isinstance(obj, (np.int32, np.int64)):
+                    return int(obj)
+                if isinstance(obj, dict):
+                    return {k: convert_numpy(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [convert_numpy(i) for i in obj]
+                return obj
 
         if prediction["decision"] == "GENUINE":
             # Payment is successful, create order items, clear cart, etc.
+
             for item in cart_items:
                 order_item = OrderItem(
                     order_id=order.id,
@@ -706,7 +735,7 @@ def payment():
             return render_template(
                 "payment.html",
                 payment_success=True,
-                prediction=prediction,
+                prediction=convert_numpy(prediction),
                 payment_method=payment_method,
                 total_amount=total_amount,
             )
@@ -739,21 +768,13 @@ def payment():
             return render_template(
                 "payment.html",
                 payment_success=False,
-                prediction=prediction,
+                prediction=convert_numpy(prediction),
                 payment_method=payment_method,
                 total_amount=total_amount,
                 feedback_required=True,
             )
         else:
 
-            def convert_numpy(obj):
-                if isinstance(obj, np.float32) or isinstance(obj, np.float64):
-                    return float(obj)
-                if isinstance(obj, dict):
-                    return {k: convert_numpy(v) for k, v in obj.items()}
-                if isinstance(obj, list):
-                    return [convert_numpy(i) for i in obj]
-                return obj
 
             # Payment not successful, show model output
             return render_template(

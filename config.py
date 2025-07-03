@@ -31,7 +31,7 @@ class Config:
 
     # Use provided DATABASE_URL or fallback to local SQLite
     SQLALCHEMY_DATABASE_URI = (
-        db_url or f'sqlite:///{os.path.join(basedir, "instance", "ecommerce.db")}'
+        f'sqlite:///{os.path.join(basedir, "instance", "ecommerce.db")}'
     )
 
     # Disable modification tracking to save system resources
