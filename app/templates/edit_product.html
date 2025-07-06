@@ -1,62 +1,67 @@
 {% extends "base.html" %} {% block title %}Edit Product - ShopNow{% endblock %}
 {% block content %}
-<h2 class="mb-4">Edit Product</h2>
+<h2 class="text-2xl font-semibold mb-6">Edit Product</h2>
 
-<div class="card shadow-sm mx-auto" style="max-width: 600px">
-  <div class="card-body">
-    <form method="POST" novalidate>
-      {{ form.hidden_tag() }}
-      <div class="row g-3">
-        <!-- Name -->
-        <div class="col-md-6">
-          {{ form.name.label(class="form-label") }} {{
-          form.name(class="form-control") }} {% for error in form.name.errors %}
-          <div class="text-danger small mt-1">{{ error }}</div>
-          {% endfor %}
-        </div>
-
-        <!-- Price -->
-        <div class="col-md-6">
-          {{ form.price.label(class="form-label") }} {{
-          form.price(class="form-control") }} {% for error in form.price.errors
-          %}
-          <div class="text-danger small mt-1">{{ error }}</div>
-          {% endfor %}
-        </div>
-
-        <!-- Description -->
-        <div class="col-md-12">
-          {{ form.description.label(class="form-label") }} {{
-          form.description(class="form-control", rows=3) }} {% for error in
-          form.description.errors %}
-          <div class="text-danger small mt-1">{{ error }}</div>
-          {% endfor %}
-        </div>
-
-        <!-- Image URL -->
-        <div class="col-md-6">
-          {{ form.image_url.label(class="form-label") }} {{
-          form.image_url(class="form-control") }} {% for error in
-          form.image_url.errors %}
-          <div class="text-danger small mt-1">{{ error }}</div>
-          {% endfor %}
-        </div>
-
-        <!-- Category -->
-        <div class="col-md-6">
-          {{ form.category.label(class="form-label") }} {{
-          form.category(class="form-control") }} {% for error in
-          form.category.errors %}
-          <div class="text-danger small mt-1">{{ error }}</div>
-          {% endfor %}
-        </div>
+<div class="bg-white shadow-md rounded-md mx-auto p-6" style="max-width: 600px">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Name -->
+      <div>
+        {{ form.name.label(class="block text-gray-700 font-medium mb-1") }} {{
+        form.name(class="w-full border border-gray-300 rounded-md px-3 py-2
+        focus:outline-none focus:ring-2 focus:ring-yellow-400") }} {% for error
+        in form.name.errors %}
+        <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
       </div>
 
-      <!-- Submit -->
-      <div class="mt-4 text-end">
-        {{ form.submit(class="btn btn-primary px-4") }}
+      <!-- Price -->
+      <div>
+        {{ form.price.label(class="block text-gray-700 font-medium mb-1") }} {{
+        form.price(class="w-full border border-gray-300 rounded-md px-3 py-2
+        focus:outline-none focus:ring-2 focus:ring-yellow-400") }} {% for error
+        in form.price.errors %}
+        <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
       </div>
-    </form>
-  </div>
+
+      <!-- Description -->
+      <div class="md:col-span-2">
+        {{ form.description.label(class="block text-gray-700 font-medium mb-1")
+        }} {{ form.description(class="w-full border border-gray-300 rounded-md
+        px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400",
+        rows=3) }} {% for error in form.description.errors %}
+        <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <!-- Image URL -->
+      <div>
+        {{ form.image_url.label(class="block text-gray-700 font-medium mb-1") }}
+        {{ form.image_url(class="w-full border border-gray-300 rounded-md px-3
+        py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400") }} {% for
+        error in form.image_url.errors %}
+        <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <!-- Category -->
+      <div>
+        {{ form.category.label(class="block text-gray-700 font-medium mb-1") }}
+        {{ form.category(class="w-full border border-gray-300 rounded-md px-3
+        py-2 focus:outline-none focus:ring-2 focus:ring-yellow-400") }} {% for
+        error in form.category.errors %}
+        <p class="text-red-600 text-sm mt-1">{{ error }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="mt-6 text-right">
+      {{ form.submit(class="bg-yellow-500 hover:bg-yellow-600 text-white
+      font-semibold px-6 py-2 rounded-md transition") }}
+    </div>
+  </form>
 </div>
 {% endblock %}

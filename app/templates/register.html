@@ -1,49 +1,72 @@
 {% extends "base.html" %} {% block title %}Register - ShopNow{% endblock %} {%
 block content %}
-<h2 class="mb-4 text-center">Create an Account</h2>
+<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">
+  Create an Account
+</h2>
 
-<div class="card shadow-sm mx-auto" style="max-width: 400px">
-  <div class="card-body">
-    <form method="POST" novalidate aria-label="Registration form">
-      {{ form.hidden_tag() }}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+  <form method="POST" novalidate aria-label="Registration form">
+    {{ form.hidden_tag() }}
 
-      <!-- Email -->
-      <div class="mb-3">
-        {{ form.email.label(class="form-label") }} {{
-        form.email(class="form-control", autofocus=True) }} {% for error in
-        form.email.errors %}
-        <div class="text-danger small mt-1">{{ error }}</div>
-        {% endfor %}
-      </div>
+    <!-- Email -->
+    <div class="mb-4">
+      <label
+        for="{{ form.email.id }}"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {{ form.email.label.text }}
+      </label>
+      {{ form.email(class="w-full px-4 py-2 border border-gray-300 rounded-md
+      focus:outline-none focus:ring-2 focus:ring-yellow-400", autofocus=True) }}
+      {% for error in form.email.errors %}
+      <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+      {% endfor %}
+    </div>
 
-      <!-- Password -->
-      <div class="mb-3">
-        {{ form.password.label(class="form-label") }} {{
-        form.password(class="form-control") }} {% for error in
-        form.password.errors %}
-        <div class="text-danger small mt-1">{{ error }}</div>
-        {% endfor %}
-      </div>
+    <!-- Password -->
+    <div class="mb-4">
+      <label
+        for="{{ form.password.id }}"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {{ form.password.label.text }}
+      </label>
+      {{ form.password(class="w-full px-4 py-2 border border-gray-300 rounded-md
+      focus:outline-none focus:ring-2 focus:ring-yellow-400") }} {% for error in
+      form.password.errors %}
+      <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+      {% endfor %}
+    </div>
 
-      <!-- Confirm Password -->
-      <div class="mb-3">
-        {{ form.confirm_password.label(class="form-label") }} {{
-        form.confirm_password(class="form-control") }} {% for error in
-        form.confirm_password.errors %}
-        <div class="text-danger small mt-1">{{ error }}</div>
-        {% endfor %}
-      </div>
+    <!-- Confirm Password -->
+    <div class="mb-4">
+      <label
+        for="{{ form.confirm_password.id }}"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {{ form.confirm_password.label.text }}
+      </label>
+      {{ form.confirm_password(class="w-full px-4 py-2 border border-gray-300
+      rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400") }} {%
+      for error in form.confirm_password.errors %}
+      <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+      {% endfor %}
+    </div>
 
-      <!-- Submit -->
-      <div class="d-grid">
-        {{ form.submit(class="btn btn-success btn-lg") }}
-      </div>
-    </form>
+    <!-- Submit -->
+    <div>
+      {{ form.submit(class="w-full bg-yellow-500 hover:bg-yellow-600 text-white
+      font-semibold py-2 px-4 rounded-md transition") }}
+    </div>
+  </form>
 
-    <p class="mt-4 text-center text-muted">
-      Already have an account?
-      <a href="{{ url_for('main_bp.login') }}">Login here</a>.
-    </p>
-  </div>
+  <p class="mt-6 text-center text-sm text-gray-600">
+    Already have an account?
+    <a
+      href="{{ url_for('main_bp.login') }}"
+      class="text-yellow-500 hover:underline"
+      >Login here</a
+    >.
+  </p>
 </div>
 {% endblock %}

@@ -1,60 +1,91 @@
 {% extends "base.html" %} {% block title %}My Orders - ShopNow{% endblock %} {%
 block content %}
-<h2 class="mb-4">My Orders</h2>
+<h2 class="text-3xl font-semibold mb-8 border-b border-yellow-400 pb-2">
+  My Orders
+</h2>
 
-{% if orders %} {% for order in orders %}
-<div
-  class="card mb-4 shadow-sm"
-  role="region"
-  aria-label="Order {{ order.id }}"
->
-  <div
-    class="card-header bg-dark text-light d-flex justify-content-between align-items-center"
+{% if orders %}
+<div class="space-y-8">
+  {% for order in orders %}
+  <section
+    class="bg-white shadow-lg rounded-lg p-6"
+    role="region"
+    aria-label="Order {{ order.id }}"
   >
-    <span>Order #{{ order.id }}</span>
-    <small>{{ order.timestamp.strftime('%b %d, %Y %I:%M %p') }}</small>
-  </div>
-  <div class="card-body">
-    <div class="row">
+    <header
+      class="flex justify-between items-center border-b border-gray-300 pb-3 mb-6"
+    >
+      <h3 class="text-xl font-bold text-gray-900">Order #{{ order.id }}</h3>
+      <time
+        class="text-gray-500 text-sm"
+        datetime="{{ order.timestamp.isoformat() }}"
+      >
+        {{ order.timestamp.strftime('%b %d, %Y %I:%M %p') }}
+      </time>
+    </header>
+
+    <div class="space-y-6">
       {% for item in order.items %}
-      <div class="col-md-6 d-flex mb-3">
+      <div class="flex items-center space-x-4">
         {% if item.product and item.product.image_url %}
         <img
           src="{{ item.product.image_url }}"
-          class="img-thumbnail me-3"
           alt="{{ item.product.name }}"
           loading="lazy"
-          style="width: 100px; height: 100px; object-fit: cover"
+          class="w-24 h-24 rounded-md object-cover shadow"
         />
         {% else %}
         <div
-          class="bg-light d-flex align-items-center justify-content-center text-muted border me-3"
-          style="width: 100px; height: 100px"
+          class="w-24 h-24 flex items-center justify-center bg-gray-200 rounded-md text-gray-400 font-semibold select-none"
         >
-          <span class="small">No Image</span>
+          No Image
         </div>
         {% endif %}
-        <div>
-          <h6 class="mb-1">
+        <div class="flex-1">
+          <h4 class="text-lg font-semibold text-gray-800 mb-1">
             {{ item.product.name if item.product else 'Product Deleted' }}
-          </h6>
-          <p class="mb-1">Qty: {{ item.quantity }}</p>
-          <p class="mb-0 text-muted">
-            Unit Price: {% if item.product %} ₹{{
-            "%.2f"|format(item.product.price) }} {% else %} N/A {% endif %}
+          </h4>
+          <p class="text-gray-600 mb-1">Qty: {{ item.quantity }}</p>
+          <p class="text-gray-500 text-sm">
+            Unit Price: {% if item.product %}
+            <span class="font-medium"
+              >₹{{ "%.2f"|format(item.product.price) }}</span
+            >
+            {% else %} N/A {% endif %}
           </p>
         </div>
       </div>
       {% endfor %}
     </div>
-    <div class="border-top pt-3 mt-3 text-end">
-      <strong>Total: ₹{{ "%.2f"|format(order.total_amount) }}</strong>
-    </div>
-  </div>
+
+    <footer class="border-t border-gray-300 mt-6 pt-4 text-right">
+      <span class="text-xl font-bold text-gray-900"
+        >Total: ₹{{ "%.2f"|format(order.total_amount) }}</span
+      >
+    </footer>
+  </section>
+  {% endfor %}
 </div>
-{% endfor %} {% else %}
-<div class="alert alert-info mt-5 text-center" role="alert">
-  <i class="bi bi-emoji-frown fs-3"></i><br />
-  You haven't placed any orders yet.
+{% else %}
+<div
+  class="mt-12 text-center text-gray-500 flex flex-col items-center space-y-3"
+  role="alert"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    class="h-12 w-12 text-yellow-400"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    stroke-width="2"
+    aria-hidden="true"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M9.172 16.828a4 4 0 005.656 0M15 12a3 3 0 00-6 0 3 3 0 006 0zM12 2v2m0 16v2m8-8h-2M4 12H2m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M16.95 16.95l1.414 1.414M7.05 7.05l1.414 1.414"
+    />
+  </svg>
+  <p class="text-lg font-medium">You haven't placed any orders yet.</p>
 </div>
 {% endif %} {% endblock %}

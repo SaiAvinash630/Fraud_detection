@@ -1,103 +1,137 @@
 {% extends "base.html" %} {% block title %}{{ product.name }} - ShopNow{%
 endblock %} {% block content %}
-<div class="row mb-5">
+<div
+  class="max-w-6xl mx-auto mt-10 px-4 grid grid-cols-1 md:grid-cols-2 gap-10"
+>
   <!-- Product Image -->
-  <div class="col-md-6 mb-4 mb-md-0">
+  <div>
     {% if product.image_url %}
     <img
       src="{{ product.image_url }}"
       alt="{{ product.name }}"
-      class="img-fluid rounded shadow-sm w-100"
-      style="max-height: 400px; object-fit: contain"
+      class="w-full h-[400px] object-contain rounded shadow-md bg-white"
       loading="lazy"
     />
     {% else %}
     <div
-      class="bg-light d-flex align-items-center justify-content-center rounded shadow-sm"
-      style="height: 300px"
+      class="w-full h-[300px] flex items-center justify-center bg-gray-100 text-gray-500 rounded shadow"
     >
-      <span class="text-muted">No Image Available</span>
+      No Image Available
     </div>
     {% endif %}
   </div>
 
   <!-- Product Details -->
-  <div class="col-md-6">
-    <h2 class="fw-bold">{{ product.name }}</h2>
-    <p class="text-success fs-4 mb-1">₹{{ "%.2f"|format(product.price) }}</p>
+  <div>
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+    <p class="text-green-600 text-xl font-semibold mb-1">
+      ₹{{ "%.2f"|format(product.price) }}
+    </p>
     {% if product.category %}
-    <p class="mb-1"><strong>Category:</strong> {{ product.category }}</p>
+    <p class="mb-1 text-gray-600">
+      <strong>Category:</strong> {{ product.category }}
+    </p>
     {% endif %}
-    <p class="mb-1"><strong>Stock:</strong> {{ product.stock }}</p>
-    <p class="mb-3">{{ product.description }}</p>
+    <p class="mb-1 text-gray-600">
+      <strong>Stock:</strong> {{ product.stock }}
+    </p>
+    <p class="mt-3 text-gray-700">{{ product.description }}</p>
 
     {% if current_user.is_authenticated %}
-    <a
-      href="{{ url_for('main_bp.add_to_cart', product_id=product.id) }}"
-      class="btn btn-dark me-2 mb-2"
-    >
-      <i class="bi bi-cart-plus"></i> Add to Cart
-    </a>
-    <a
-      href="{{ url_for('main_bp.add_to_wishlist', product_id=product.id) }}"
-      class="btn btn-outline-secondary mb-2"
-    >
-      <i class="bi bi-heart"></i> Add to Wishlist
-    </a>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a
+        href="{{ url_for('main_bp.add_to_cart', product_id=product.id) }}"
+        class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-md font-medium transition flex items-center gap-2"
+      >
+        <i class="bi bi-cart-plus"></i> Add to Cart
+      </a>
+      <a
+        href="{{ url_for('main_bp.add_to_wishlist', product_id=product.id) }}"
+        class="border border-gray-300 text-gray-700 hover:text-red-500 px-5 py-2 rounded-md transition flex items-center gap-2"
+      >
+        <i class="bi bi-heart"></i> Add to Wishlist
+      </a>
+    </div>
     {% else %}
-    <p class="text-muted">
-      Please <a href="{{ url_for('main_bp.login') }}">log in</a> to purchase or
-      save products.
+    <p class="text-sm text-gray-500 mt-4">
+      Please
+      <a
+        href="{{ url_for('main_bp.login') }}"
+        class="text-yellow-500 hover:underline"
+        >log in</a
+      >
+      to purchase or save products.
     </p>
     {% endif %}
   </div>
 </div>
 
-<hr />
-
 <!-- Reviews Section -->
-<h4 class="mt-5 mb-3">Customer Reviews</h4>
-{% if product.reviews %} {% for review in product.reviews %}
-<div class="card mb-3">
-  <div class="card-body">
-    <h6 class="card-title mb-1">{{ review.user.email }}</h6>
-    <p class="mb-1">{{ review.comment }}</p>
-    <small class="text-muted"
-      >Rating: {{ review.rating }}/5 — {{ review.timestamp.strftime('%b %d, %Y')
-      }}</small
-    >
+<hr class="my-10 max-w-6xl mx-auto border-gray-300" />
+
+<div class="max-w-4xl mx-auto px-4">
+  <h2 class="text-xl font-semibold text-gray-800 mb-4">Customer Reviews</h2>
+
+  {% if product.reviews %}
+  <div class="space-y-4">
+    {% for review in product.reviews %}
+    <div class="bg-white p-4 rounded-md shadow-sm">
+      <div class="flex items-center justify-between mb-1">
+        <h6 class="font-medium text-gray-700">{{ review.user.email }}</h6>
+        <span class="text-sm text-yellow-500 font-medium"
+          >Rating: {{ review.rating }}/5</span
+        >
+      </div>
+      <p class="text-gray-700 mb-1">{{ review.comment }}</p>
+      <p class="text-xs text-gray-400">
+        {{ review.timestamp.strftime('%b %d, %Y') }}
+      </p>
+    </div>
+    {% endfor %}
   </div>
+  {% else %}
+  <p class="text-gray-500">No reviews yet.</p>
+  {% endif %}
 </div>
-{% endfor %} {% else %}
-<p class="text-muted">No reviews yet.</p>
-{% endif %}
 
 <!-- Leave a Review -->
 {% if current_user.is_authenticated %}
-<hr />
-<h5 class="mt-4">Leave a Review</h5>
-<form method="POST" novalidate aria-label="Review form">
-  {{ review_form.hidden_tag() }}
+<hr class="my-10 max-w-6xl mx-auto border-gray-300" />
 
-  <!-- Rating Field -->
-  <div class="mb-3">
-    {{ review_form.rating.label(class="form-label") }} {{
-    review_form.rating(class="form-select") }} {% for error in
-    review_form.rating.errors %}
-    <div class="text-danger small mt-1">{{ error }}</div>
-    {% endfor %}
-  </div>
+<div class="max-w-3xl mx-auto px-4">
+  <h3 class="text-lg font-semibold mb-4 text-gray-800">Leave a Review</h3>
+  <form method="POST" novalidate class="space-y-4" aria-label="Review form">
+    {{ review_form.hidden_tag() }}
 
-  <!-- Comment Field -->
-  <div class="mb-3">
-    {{ review_form.content.label(class="form-label") }} {{
-    review_form.content(class="form-control", rows="3") }} {% for error in
-    review_form.content.errors %}
-    <div class="text-danger small mt-1">{{ error }}</div>
-    {% endfor %}
-  </div>
+    <!-- Rating -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1"
+        >{{ review_form.rating.label.text }}</label
+      >
+      {{ review_form.rating(class="w-full border border-gray-300 rounded-md px-3
+      py-2 focus:ring-yellow-400 focus:outline-none") }} {% for error in
+      review_form.rating.errors %}
+      <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+      {% endfor %}
+    </div>
 
-  <!-- Submit -->
-  <div class="mb-3">{{ review_form.submit(class="btn btn-primary") }}</div>
-</form>
+    <!-- Comment -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1"
+        >{{ review_form.content.label.text }}</label
+      >
+      {{ review_form.content(class="w-full border border-gray-300 rounded-md
+      px-3 py-2 focus:ring-yellow-400 focus:outline-none", rows="3") }} {% for
+      error in review_form.content.errors %}
+      <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <!-- Submit -->
+    <div>
+      {{ review_form.submit(class="bg-yellow-500 hover:bg-yellow-600 text-white
+      px-5 py-2 rounded-md font-medium transition") }}
+    </div>
+  </form>
+</div>
 {% endif %} {% endblock %}

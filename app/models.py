@@ -51,6 +51,7 @@ class Product(db.Model):
     image_url = db.Column(db.String(300))
     category = db.Column(db.String(100))
     stock = db.Column(db.Integer, default=10)
+    featured = db.Column(db.Boolean, default=False)  # ✅ New field
 
     # Relationships
     reviews = db.relationship("Review", backref="product", cascade="all, delete-orphan")
@@ -135,8 +136,8 @@ class FeedbackCase(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id'))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))  # <-- Fix here
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"))
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"))  # <-- Fix here
     user_id = db.Column(db.Integer)
     payment_method = db.Column(db.String(50))
     device = db.Column(db.String(50))

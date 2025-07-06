@@ -179,30 +179,86 @@ def load_cart_count():
 # -------------------------------
 
 
+# @main_bp.route("/")
+# def index():
+#     selected_category = request.args.get("category", "")
+#     categories = [c[0] for c in db.session.query(Product.category).distinct() if c[0]]
+
+#     if not selected_category:
+#         # Featured products explicitly marked
+#         featured_products = Product.query.filter_by(featured=True).limit(6).all()
+
+#         testimonials = [
+#             "ShopNow is my go-to store for everything. Fast delivery and great prices!",
+#             "Excellent customer support and amazing product variety. Highly recommend.",
+#         ]
+
+#         return render_template(
+#             "index.html",
+#             categories=categories,
+#             selected_category=None,
+#             products=None,
+#             featured_products=featured_products,
+#             testimonials=testimonials,
+#         )
+#     else:
+#         products = Product.query.filter_by(category=selected_category).all()
+#         return render_template(
+#             "index.html",
+#             categories=categories,
+#             selected_category=selected_category,
+#             products=products,
+#             featured_products=None,
+#             testimonials=None,
+#         )
+
+
 @main_bp.route("/")
 def index():
-    selected_category = request.args.get("category", "")
-
-    # Get all unique categories for the homepage
     categories = [c[0] for c in db.session.query(Product.category).distinct() if c[0]]
+    featured_products = Product.query.filter_by(featured=True).limit(6).all()
+    testimonials = [
+        "ShopNow is my go-to store for everything. Fast delivery and great prices!",
+        "Excellent customer support and amazing product variety. Highly recommend.",
+    ]
 
-    if not selected_category:
-        # No category selected: show only categories
-        return render_template(
-            "index.html",
-            categories=categories,
-            selected_category=None,
-            products=None,
-        )
-    else:
-        # Category selected: show products in that category
-        products = Product.query.filter_by(category=selected_category).all()
-        return render_template(
-            "index.html",
-            categories=categories,
-            selected_category=selected_category,
-            products=products,
-        )
+    return render_template(
+        "index.html",
+        categories=categories,
+        featured_products=featured_products,
+        testimonials=testimonials,
+    )
+
+
+@main_bp.route("/categories")
+def categories_view():
+    selected_category = request.args.get("category")
+    sort = request.args.get("sort")
+
+    categories = [c[0] for c in db.session.query(Product.category).distinct() if c[0]]
+    products_query = Product.query
+
+    # Filter by category
+    if selected_category:
+        products_query = products_query.filter_by(category=selected_category)
+
+    # Sort options
+    if sort == "price_asc":
+        products_query = products_query.order_by(Product.price.asc())
+    elif sort == "price_desc":
+        products_query = products_query.order_by(Product.price.desc())
+    elif sort == "name":
+        products_query = products_query.order_by(Product.name.asc())
+
+    products = products_query.all()
+
+    return render_template(
+        "categories.html",
+        categories=categories,
+        selected_category=selected_category,
+        products=products,
+        sort=sort,
+    )
 
 
 # -------------------------------
@@ -578,15 +634,28 @@ def payment():
     )
     allowed_methods = ["Credit Card", "Debit Card", "Wallet", "Net Banking"]
 
+    # Fetch cart items and filter out invalid ones
+    cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    cart_items = [item for item in cart_items if item.product is not None]
+
+    # Calculate order summary values
+    subtotal = sum(item.product.price * item.quantity for item in cart_items)
+    shipping = 50.0 if subtotal > 0 else 0.0
+    discount = 0.0  # Add discount logic if any
+    total = subtotal + shipping - discount
+    order_summary = {
+        "subtotal": subtotal,
+        "shipping": shipping,
+        "discount": discount,
+        "total": total,
+    }
+
     if request.method == "POST":
         payment_method = request.form.get("payment_method")
-        cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
-        # Filter out cart items with missing products
-        cart_items = [item for item in cart_items if item.product is not None]
 
         if payment_method not in allowed_methods:
             flash("Please select a valid payment method.")
-            return render_template("payment.html")
+            return render_template("payment.html", order_summary=order_summary)
 
         if not cart_items:
             flash("Your cart is empty or contains unavailable products.")
@@ -597,7 +666,7 @@ def payment():
         category = first_product.category if first_product else "Unknown"
         product_id = first_product.id if first_product else None
 
-        total_amount = sum(item.product.price * item.quantity for item in cart_items)
+        total_amount = subtotal
         transaction_time = datetime.now()
         time_24h_ago = transaction_time - timedelta(hours=24)
         orders_last_24h = Order.query.filter(
@@ -608,15 +677,12 @@ def payment():
         num_trans_24h = sum(1 for o in orders_last_24h if o.status == "Completed")
         num_failed_24h = sum(1 for o in orders_last_24h if o.status == "Cancelled")
         quantity = sum(item.quantity for item in cart_items)
-        # Compute freq_last_24h: number of completed orders in last 24h
         freq_last_24h = Order.query.filter(
             Order.user_id == current_user.id,
             Order.timestamp >= time_24h_ago,
             Order.timestamp <= transaction_time,
             Order.status == "Completed",
         ).count()
-
-        # Compute amount_last_24h: total amount spent in last 24h
         amount_last_24h = (
             db.session.query(db.func.sum(Order.total_amount))
             .filter(
@@ -628,8 +694,6 @@ def payment():
             .scalar()
             or 0.0
         )
-
-        # Compute sudden_category_switch: compare last completed order's category to current
         last_order = (
             Order.query.filter(
                 Order.user_id == current_user.id, Order.status == "Completed"
@@ -648,6 +712,7 @@ def payment():
             )
         else:
             sudden_category_switch = 0
+
         sample_transaction = {
             "account_age_days": account_age_days,
             "payment_method": payment_method,
@@ -659,7 +724,7 @@ def payment():
             "num_trans_24h": num_trans_24h,
             "num_failed_24h": num_failed_24h,
             "no_of_cards_from_ip": getattr(current_user, "no_of_cards_from_ip", 0),
-            "promo_used": 0,  # or set based on your logic
+            "promo_used": 0,
             "freq_last_24h": freq_last_24h,
             "amount_last_24h": amount_last_24h,
             "sudden_category_switch": sudden_category_switch,
@@ -669,7 +734,6 @@ def payment():
 
         prediction = fraud_predictor.predict(sample_transaction)
 
-        # Set order status based on prediction
         if prediction["decision"] == "GENUINE":
             order_status = "Completed"
         elif prediction["decision"] == "FRAUD":
@@ -679,7 +743,6 @@ def payment():
         else:
             order_status = "Unknown"
 
-        # Always create an Order record for every attempt
         order = Order(
             user_id=current_user.id,
             total_amount=total_amount,
@@ -692,7 +755,6 @@ def payment():
         db.session.commit()
 
         if prediction["decision"] == "GENUINE":
-            # Payment is successful, create order items, clear cart, etc.
             for item in cart_items:
                 order_item = OrderItem(
                     order_id=order.id,
@@ -709,6 +771,7 @@ def payment():
                 prediction=prediction,
                 payment_method=payment_method,
                 total_amount=total_amount,
+                order_summary=order_summary,
             )
         elif prediction["decision"] == "NEED TO TAKE FEEDBACK":
             feedback_case = FeedbackCase(
@@ -729,7 +792,7 @@ def payment():
                 probability=prediction["probability"],
                 anomaly_score=prediction["anomaly_score"],
                 admin_status="Pending",
-                product_id=product_id,  # <-- safe assignment
+                product_id=product_id,
             )
             db.session.add(feedback_case)
             db.session.commit()
@@ -743,6 +806,7 @@ def payment():
                 payment_method=payment_method,
                 total_amount=total_amount,
                 feedback_required=True,
+                order_summary=order_summary,
             )
         else:
 
@@ -755,16 +819,17 @@ def payment():
                     return [convert_numpy(i) for i in obj]
                 return obj
 
-            # Payment not successful, show model output
             return render_template(
                 "payment.html",
                 payment_success=False,
                 prediction=convert_numpy(prediction),
                 payment_method=payment_method,
                 total_amount=total_amount,
+                order_summary=order_summary,
             )
 
-    return render_template("payment.html")
+    # GET request: pass order summary for sidebar
+    return render_template("payment.html", order_summary=order_summary)
 
 
 @main_bp.route("/admin/feedback_cases")

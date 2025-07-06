@@ -1,78 +1,89 @@
 {% extends "base.html" %} {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">Feedback Cases Review</h2>
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle">
-      <thead class="table-dark">
+<div class="px-4 py-6">
+  <h2 class="text-2xl font-semibold mb-6">Feedback Cases Review</h2>
+
+  <div class="overflow-x-auto bg-white shadow-md rounded-md">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-100 text-gray-700 font-semibold">
         <tr>
-          <th>ID</th>
-          <th>User</th>
-          <th>Payment Method</th>
-          <th>Device</th>
-          <th>Category</th>
-          <th>Amount</th>
-          <th>Quantity</th>
-          <th>Total Value</th>
-          <th>Num Trans 24h</th>
-          <th>Num Failed 24h</th>
-          <th>Cards from IP</th>
-          <th>Account Age (days)</th>
-          <th>Timestamp</th>
-          <th>Prediction</th>
-          <th>Probability</th>
-          <th>Anomaly Score</th>
-          <th>Status</th>
-          <th>Action</th>
-          <th>Product Name</th>
-          <th>Product Price</th>
+          <th class="px-4 py-3 text-left">ID</th>
+          <th class="px-4 py-3 text-left">User</th>
+          <th class="px-4 py-3 text-left">Payment Method</th>
+          <th class="px-4 py-3 text-left">Device</th>
+          <th class="px-4 py-3 text-left">Category</th>
+          <th class="px-4 py-3 text-left">Amount</th>
+          <th class="px-4 py-3 text-left">Quantity</th>
+          <th class="px-4 py-3 text-left">Total Value</th>
+          <th class="px-4 py-3 text-left">Num Trans 24h</th>
+          <th class="px-4 py-3 text-left">Num Failed 24h</th>
+          <th class="px-4 py-3 text-left">Cards from IP</th>
+          <th class="px-4 py-3 text-left">Account Age (days)</th>
+          <th class="px-4 py-3 text-left">Timestamp</th>
+          <th class="px-4 py-3 text-left">Prediction</th>
+          <th class="px-4 py-3 text-left">Probability</th>
+          <th class="px-4 py-3 text-left">Anomaly Score</th>
+          <th class="px-4 py-3 text-left">Status</th>
+          <th class="px-4 py-3 text-left">Action</th>
+          <th class="px-4 py-3 text-left">Product Name</th>
+          <th class="px-4 py-3 text-left">Product Price</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-100">
         {% for case in cases %}
         <tr
-          class="{% if case.admin_status == 'Pending' %}table-warning{% elif case.admin_status == 'Approved' %}table-success{% elif case.admin_status == 'Rejected' %}table-danger{% endif %}"
+          class="{% if case.admin_status == 'Pending' %}bg-yellow-50{% elif case.admin_status == 'Approved' %}bg-green-50{% elif case.admin_status == 'Rejected' %}bg-red-50{% endif %}"
         >
-          <td>{{ case.id }}</td>
-          <td>{{ case.user_id }}</td>
-          <td>{{ case.payment_method }}</td>
-          <td>{{ case.device }}</td>
-          <td>{{ case.category }}</td>
-          <td>{{ case.amount }}</td>
-          <td>{{ case.quantity }}</td>
-          <td>{{ case.total_value }}</td>
-          <td>{{ case.num_trans_24h }}</td>
-          <td>{{ case.num_failed_24h }}</td>
-          <td>{{ case.no_of_cards_from_ip }}</td>
-          <td>{{ case.account_age_days }}</td>
-          <td>{{ case.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-          <td>{{ case.prediction }}</td>
-          <td>{{ case.probability }}</td>
-          <td>{{ case.anomaly_score }}</td>
-          <td>
+          <td class="px-4 py-3">{{ case.id }}</td>
+          <td class="px-4 py-3">{{ case.user_id }}</td>
+          <td class="px-4 py-3">{{ case.payment_method }}</td>
+          <td class="px-4 py-3">{{ case.device }}</td>
+          <td class="px-4 py-3">{{ case.category }}</td>
+          <td class="px-4 py-3">{{ case.amount }}</td>
+          <td class="px-4 py-3">{{ case.quantity }}</td>
+          <td class="px-4 py-3">{{ case.total_value }}</td>
+          <td class="px-4 py-3">{{ case.num_trans_24h }}</td>
+          <td class="px-4 py-3">{{ case.num_failed_24h }}</td>
+          <td class="px-4 py-3">{{ case.no_of_cards_from_ip }}</td>
+          <td class="px-4 py-3">{{ case.account_age_days }}</td>
+          <td class="px-4 py-3">
+            {{ case.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+          </td>
+          <td class="px-4 py-3">{{ case.prediction }}</td>
+          <td class="px-4 py-3">{{ case.probability }}</td>
+          <td class="px-4 py-3">{{ case.anomaly_score }}</td>
+          <td class="px-4 py-3">
             <span
-              class="badge {% if case.admin_status == 'Pending' %}bg-warning text-dark {% elif case.admin_status == 'Approved' %}bg-success {% elif case.admin_status == 'Rejected' %}bg-danger {% endif %}"
+              class="text-xs font-semibold px-2 py-1 rounded {% if case.admin_status == 'Pending' %} bg-yellow-200 text-yellow-800 {% elif case.admin_status == 'Approved' %} bg-green-200 text-green-800 {% elif case.admin_status == 'Rejected' %} bg-red-200 text-red-800 {% endif %}"
             >
               {{ case.admin_status }}
             </span>
           </td>
-          <td>
+          <td class="px-4 py-3">
             {% if case.admin_status == "Pending" %}
-            <a
-              href="{{ url_for('main_bp.feedback_case_action', case_id=case.id, action='approve') }}"
-              class="btn btn-success btn-sm mb-1"
-              >Approve</a
-            >
-            <a
-              href="{{ url_for('main_bp.feedback_case_action', case_id=case.id, action='reject') }}"
-              class="btn btn-danger btn-sm mb-1"
-              >Reject</a
-            >
+            <div class="flex flex-col space-y-1">
+              <a
+                href="{{ url_for('main_bp.feedback_case_action', case_id=case.id, action='approve') }}"
+                class="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition"
+              >
+                Approve
+              </a>
+              <a
+                href="{{ url_for('main_bp.feedback_case_action', case_id=case.id, action='reject') }}"
+                class="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 transition"
+              >
+                Reject
+              </a>
+            </div>
             {% else %}
-            <span class="text-muted">-</span>
+            <span class="text-gray-400 text-sm">—</span>
             {% endif %}
           </td>
-          <td>{{ case.product.name if case.product else 'N/A' }}</td>
-          <td>{{ case.product.price if case.product else 'N/A' }}</td>
+          <td class="px-4 py-3">
+            {{ case.product.name if case.product else 'N/A' }}
+          </td>
+          <td class="px-4 py-3">
+            {{ case.product.price if case.product else 'N/A' }}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

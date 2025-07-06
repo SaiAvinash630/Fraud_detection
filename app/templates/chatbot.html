@@ -10,7 +10,7 @@
   onclick="toggleChat()"
   id="chat-toggle-button"
   aria-label="Open chat"
-  class="fixed bottom-6 right-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-700 text-white p-4 rounded-full shadow-2xl z-50 flex items-center justify-center transition-transform transform hover:scale-110 active:scale-95"
+  class="fixed bottom-6 right-6 bg-gradient-to-br from-blue-600 to-indigo-700 hover:from-indigo-700 hover:to-blue-800 text-white p-4 rounded-full shadow-2xl z-50 flex items-center justify-center transition-transform transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-400"
   style="width: 56px; height: 56px"
 >
   <svg
@@ -32,71 +32,93 @@
 <!-- Chat Window -->
 <div
   id="chatbot-container"
-  class="fixed bottom-20 right-6 w-96 max-w-full z-50 hidden bg-white bg-opacity-90 backdrop-blur-md border border-gray-300 rounded-3xl shadow-xl flex flex-col overflow-hidden"
+  class="fixed bottom-20 right-6 w-96 max-w-full z-50 hidden bg-white bg-opacity-95 backdrop-blur-md border border-gray-300 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
   style="height: 560px"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="chatbot-title"
 >
   <!-- Header -->
-  <div
-    class="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-3xl text-white font-semibold text-lg shadow-md select-none"
+  <header
+    class="flex items-center justify-between bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-4 rounded-t-3xl text-white font-semibold text-lg shadow-lg select-none"
   >
-    <span>Support Chat</span>
+    <h2 id="chatbot-title" class="flex items-center gap-2">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"
+        />
+      </svg>
+      Support Chat
+    </h2>
     <button
       onclick="toggleChat()"
-      class="text-white text-3xl font-extrabold leading-none hover:opacity-80 transition-opacity"
+      aria-label="Close chat"
+      class="text-white text-3xl font-extrabold leading-none hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-white rounded"
     >
       &times;
     </button>
-  </div>
+  </header>
 
   <!-- Chat Messages -->
-  <div
+  <main
     id="chat-messages"
-    class="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100"
+    class="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100"
   >
-    <div class="text-center text-gray-400 italic select-none">
+    <p class="text-center text-gray-400 italic select-none">
       Choose a question below or ask your own.
-    </div>
-  </div>
+    </p>
+  </main>
 
   <!-- FAQ Buttons -->
-  <div
-    class="px-6 pt-4 pb-2 border-t border-gray-300 flex flex-wrap gap-3 bg-white"
+  <section
+    class="px-6 pt-4 pb-3 border-t border-gray-300 flex flex-wrap gap-3 bg-white"
+    aria-label="Frequently asked questions"
   >
     <button
-      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium shadow-sm hover:bg-blue-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
       data-question="What does 'GENUINE' decision mean?"
       type="button"
     >
       What does 'GENUINE' decision mean?
     </button>
     <button
-      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium shadow-sm hover:bg-blue-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
       data-question="Why was my transaction flagged as fraud?"
       type="button"
     >
       Why was my transaction flagged as fraud?
     </button>
     <button
-      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium shadow-sm hover:bg-blue-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
       data-question="What are fraud indicators?"
       type="button"
     >
       What are fraud indicators?
     </button>
     <button
-      class="faq-btn bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-medium shadow-sm hover:bg-blue-200 transition"
+      class="faq-btn bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium shadow-sm hover:bg-blue-200 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
       data-question="How is the fraud probability calculated?"
       type="button"
     >
       How is the fraud probability calculated?
     </button>
-  </div>
+  </section>
 
   <!-- Input Area -->
   <form
     id="chat-form"
     class="flex items-center gap-3 px-6 py-4 border-t border-gray-300 bg-white"
     onsubmit="return sendUserMessage(event);"
+    role="search"
+    aria-label="Send a message"
   >
     <input
       type="text"
@@ -104,11 +126,13 @@
       placeholder="Type your question..."
       autocomplete="off"
       required
-      class="flex-grow bg-gray-100 rounded-full py-3 px-5 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 text-gray-700 transition"
+      class="flex-grow bg-gray-100 rounded-full py-3 px-5 focus:outline-none focus:ring-2 focus:ring-indigo-600 placeholder-gray-400 text-gray-700 transition"
+      aria-label="Chat input"
     />
     <button
       type="submit"
-      class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-full px-6 py-3 shadow-lg transition-transform transform active:scale-95"
+      class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-full px-6 py-3 shadow-lg transition-transform transform active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-400"
+      aria-label="Send message"
     >
       Send
     </button>
@@ -163,11 +187,11 @@
         : "self-start max-w-[80%] text-left";
 
     bubble.innerHTML = `
-      <div class="inline-block px-4 py-2 rounded-2xl ${
+      <div class="inline-block px-5 py-3 rounded-3xl ${
         sender === "You"
           ? "bg-indigo-100 text-indigo-900"
-          : "bg-indigo-600 text-white shadow-md"
-      } break-words whitespace-pre-line select-text">
+          : "bg-indigo-700 text-white shadow-lg"
+      } break-words whitespace-pre-wrap select-text">
         ${messageHTML}
       </div>
     `;
@@ -190,29 +214,29 @@
         if (parsed.decision) {
           const prob = Math.round((1 - parsed.probability) * 100);
           const color =
-            parsed.decision === "GENUINE" ? "bg-green-500" : "bg-red-500";
+            parsed.decision === "GENUINE" ? "bg-green-500" : "bg-red-600";
 
           let html = `
             <div class="font-semibold mb-1">Decision:
               <span class="${color} text-white px-2 py-1 rounded">${parsed.decision}</span>
             </div>
-            <div class="mb-2">
-              <div class="text-xs mb-1">Fraud Likelihood: ${prob}%</div>
-              <div class="w-full bg-gray-200 rounded h-2">
+            <div class="mb-3">
+              <div class="text-xs mb-1 font-mono">Fraud Likelihood: ${prob}%</div>
+              <div class="w-full bg-gray-300 rounded h-2">
                 <div class="${color} h-2 rounded" style="width:${prob}%"></div>
               </div>
             </div>`;
 
           if (parsed.fraud_indicators?.length) {
-            html += `<div class="text-sm mt-2 font-medium mb-1">Key Indicators:</div>`;
+            html += `<div class="text-sm font-semibold mb-1">Key Indicators:</div>`;
             parsed.fraud_indicators.forEach((ind) => {
               html += `
-                <div class="mb-1">
-                  <div class="flex justify-between text-xs text-gray-600">
+                <div class="mb-2">
+                  <div class="flex justify-between text-xs text-gray-200">
                     <span>${ind.feature}</span>
                     <span>${parseFloat(ind.impact_percent).toFixed(1)}%</span>
                   </div>
-                  <div class="w-full bg-gray-100 rounded h-1.5">
+                  <div class="w-full bg-gray-700 rounded h-1.5">
                     <div class="bg-blue-400 h-1.5 rounded" style="width:${
                       ind.impact_percent
                     }%"></div>
@@ -224,7 +248,7 @@
           return;
         }
       } catch {
-        // Non-JSON fallback
+        // Not JSON or no decision, fallback:
       }
       appendMessage("Support", data.answer);
     } catch (error) {

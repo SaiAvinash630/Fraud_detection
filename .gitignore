@@ -1,10 +1,6 @@
 __pycache__/
-instance/
 .env
 *.pyc
-*.sqlite3
-*.db
-*.DS_Store
 .mypy_cache/
 .env.*
 venv/
